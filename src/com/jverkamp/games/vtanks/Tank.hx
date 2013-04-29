@@ -81,6 +81,23 @@ class Tank {
 	 * @param	msSinceLastFrame How long it's been since the last update
 	 */
 	public function update(msSinceLastFrame : Int) {
+		// Falling tanks should fall
+		// Find the grand beneath it
+		for (i in 0...world.mountains.length - 1) {
+			// We have to be between two peaks
+			// Get the heights of those and interpolate between them
+			if (world.mountains[i].x <= location.x && world.mountains[i + 1].x >= location.x) {
+				var multiplier = 1.0 * (location.x - world.mountains[i].x) / (world.mountains[i + 1].x - world.mountains[i].x);
+				var yground = multiplier * (world.mountains[i + 1].y - world.mountains[i].y) + world.mountains[i].y;
+				if (location.y <= yground) {
+					falling = false;
+				} else {
+					// TODO: Make this better
+					location.y -= 1;
+				}
+			}
+		}
+		
 		// NOTE: for angles, 0 is right and positive is counter clockwise
 		
 		// Shift makes it faster, ctrl makes it slower

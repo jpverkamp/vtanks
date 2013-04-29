@@ -12,18 +12,21 @@ import nme.Lib;
  * Holds all of the mountains and tanks in the world
  */
 class World {
-	var width : Int;
-	var height : Int;
+	public var width : Int;
+	public var height : Int;
 	
-	var g : Graphics;
-	var mountains : Array<Point>;
-	var tanks : Array<Tank>;
-	var projectiles : Array<Projectile>;
+	public var g : Graphics;
+	public var mountains : Array<Point>;
+	public var tanks : Array<Tank>;
+	public var projectiles : Array<Projectile>;
 	
-	var currentTank : Tank;
+	public var currentTank : Int;
+	public var winner : Tank;
 	
-	var angleDisplay : TextField;
-	var powerDisplay : TextField;
+	public var angleDisplay : TextField;
+	public var powerDisplay : TextField;
+	
+	public var waiting : Bool;
 
 	/**
 	 * Create a new world of the specified size
@@ -33,6 +36,7 @@ class World {
 	public function new(width : Int, height : Int) {
 		this.width = width;
 		this.height = height;
+		this.waiting = true;
 		
 		// World generation
 		generateMountains();
@@ -176,7 +180,7 @@ class World {
 		}
 		
 		// Set the current tank
-		currentTank = tanks[0];
+		currentTank = 0;
 	}
 	
 	/**
@@ -185,16 +189,19 @@ class World {
 	 * @return If it's the current one.
 	 */
 	public function isCurrent(tank : Tank) : Bool {
-		return tank == currentTank;
+		return tank == tanks[currentTank];
 	}
 	
 	/**
-	 * The current tank fires it's gun.
+	 * The current tank fires it's gun. 
 	 * 
 	 * TODO: This should also advance the round
 	 */
 	public function fire() {
-		projectiles.push(new Projectile(this, currentTank, currentTank.getTurrent(), currentTank.angle, currentTank.power));
+		if (winner == null && projectiles.length == 0) {
+			waiting = false;
+			projectiles.push(new Projectile(this, tanks[currentTank] , tanks[currentTank].getTurrent(), tanks[currentTank].angle, tanks[currentTank].power));
+		}
 	}
 	
 	/**
@@ -228,12 +235,12 @@ class World {
 					// We have to be between two peaks
 					// Get the heights of those and interpolate between them
 					if (mountains[j].x <= proj.location.x && mountains[j + 1].x >= proj.location.x) {
-						trace("projectile at " + proj.location + " hitting between " + mountains[j] + " and " + mountains[j + 1]);
+						//trace("projectile at " + proj.location + " hitting between " + mountains[j] + " and " + mountains[j + 1]);
 						
 						var multiplier = 1.0 * (proj.location.x - mountains[j].x) / (mountains[j + 1].x - mountains[j].x);
 						var yground = multiplier * (mountains[j + 1].y - mountains[j].y) + mountains[j].y;
 						
-						trace("ground point is at " + yground);
+						//trace("ground point is at " + yground);
 						
 						if (proj.location.y < yground) {
 							impactY = yground;
@@ -246,7 +253,7 @@ class World {
 				if (impactY >= 0) {
 					proj.explodingFrame = 1;
 					proj.velocity = new Point(0, 0);
-					proj.location.y = impactY;
+					//proj.location.y = impactY;
 				}
 			}
 			
@@ -266,7 +273,8 @@ class World {
 					}
 					
 					// Peak matched, remove
-					if (proj.location.x - Projectile.MAX_EXPLOSION_WIDTH < mountains[i].x && proj.location.x - Projectile.MAX_EXPLOSION_WIDTH > mountains[i].x) {
+					if (proj.location.x - Projectile.MAX_EXPLOSION_WIDTH < mountains[i].x && proj.location.x + Projectile.MAX_EXPLOSION_WIDTH > mountains[i].x) {
+						//trace("DEBUG: removing peak " + i + ", " + mountains[i]);
 						mountains.remove(mountains[i]);
 					} 
 					
@@ -277,17 +285,21 @@ class World {
 				}
 				
 				// Add new peaks for the explosion
-				trace("DEBUG: new peak at " + insertAt + ", " + new Point(proj.location.x - Projectile.MAX_EXPLOSION_WIDTH, proj.location.y));
-				trace("DEBUG: new peak at " + (insertAt + 1) + ", " + new Point(proj.location.x - Projectile.MAX_EXPLOSION_WIDTH / 2, proj.location.y - Projectile.MAX_EXPLOSION_WIDTH / 2));
-				trace("DEBUG: new peak at " + (insertAt + 2) + ", " + new Point(proj.location.x + Projectile.MAX_EXPLOSION_WIDTH / 2, proj.location.y - Projectile.MAX_EXPLOSION_WIDTH / 2));
-				trace("DEBUG: new peak at " + (insertAt + 3) + ", " + new Point(proj.location.x + Projectile.MAX_EXPLOSION_WIDTH, proj.location.y));
-				
+				//trace("DEBUG: new peak at " + insertAt + ", " + new Point(proj.location.x - Projectile.MAX_EXPLOSION_WIDTH, proj.location.y));
+				//trace("DEBUG: new peak at " + (insertAt + 1) + ", " + new Point(proj.location.x - Projectile.MAX_EXPLOSION_WIDTH / 2, proj.location.y - Projectile.MAX_EXPLOSION_WIDTH / 2));
+				//trace("DEBUG: new peak at " + (insertAt + 2) + ", " + new Point(proj.location.x + Projectile.MAX_EXPLOSION_WIDTH / 2, proj.location.y - Projectile.MAX_EXPLOSION_WIDTH / 2));
+				//trace("DEBUG: new peak at " + (insertAt + 3) + ", " + new Point(proj.location.x + Projectile.MAX_EXPLOSION_WIDTH, proj.location.y));
 				mountains.insert(insertAt, new Point(proj.location.x - Projectile.MAX_EXPLOSION_WIDTH, proj.location.y));
 				mountains.insert(insertAt + 1, new Point(proj.location.x - Projectile.MAX_EXPLOSION_WIDTH / 2, proj.location.y - Projectile.MAX_EXPLOSION_WIDTH / 2));
 				mountains.insert(insertAt + 2, new Point(proj.location.x + Projectile.MAX_EXPLOSION_WIDTH / 2, proj.location.y - Projectile.MAX_EXPLOSION_WIDTH / 2));
 				mountains.insert(insertAt + 3, new Point(proj.location.x + Projectile.MAX_EXPLOSION_WIDTH, proj.location.y));
 				
-				mountains.sort(function(a, b) { return (a.x > b.x ? 1 : a.x < b.x ? -1 : 0); } );
+				// Check for any tanks in that range.
+				for (tank in tanks) {
+					if (proj.location.x - Projectile.MAX_EXPLOSION_WIDTH < tank.location.x && proj.location.x + Projectile.MAX_EXPLOSION_WIDTH > tank.location.x) {
+						tank.falling = true;
+					}
+				}
 			}
 			
 			// Check if we can remove any tanks
@@ -304,12 +316,31 @@ class World {
 					}
 				}
 			}
-			
 		}
 		
-		// Remove time
+		// Remove things (whee!)
 		for (proj in projsToRemove) projectiles.remove(proj);
 		for (tank in tanksToRemove) tanks.remove(tank);
+		
+		// Check if we can advance the player counter
+		// There has to be no projectiles and no falling tanks
+		// TODO: Known bug, if the next tank in line is removed, strange things happen
+		if (!waiting && projectiles.length == 0 && !Lambda.exists(tanks, function(t) { return t.falling; } )) {
+			currentTank += 1;
+			if (currentTank >= tanks.length) {
+				currentTank = 0;
+			}
+			waiting = true;
+			
+			// Check for a winner
+			if (tanks.length == 1) {
+				winner = tanks[0];
+			} else if (tanks.length == 0) {
+				winner = new Tank(this, new Point(0, 0), 0x000000);
+			}
+			
+			trace("DEBUG: Current tank advanced to " + currentTank);
+		}
 	}
 	
 	/**
@@ -333,6 +364,7 @@ class World {
 		g.lineTo(0, height);
 		g.endFill();
 		
+		// Display for winnders!
 		// Tanks
 		//    D (tip)
 		//     \
@@ -379,6 +411,26 @@ class World {
 				g.drawCircle(proj.location.x, height - proj.location.y, Projectile.PROJECTILE_WIDTH + proj.explodingFrame);
 			}
 			g.endFill();
+		}
+		
+		// We have a winner!
+		if (winner != null) {
+			var winMessage = new TextField();
+			winMessage.backgroundColor = 0x000000;
+			winMessage.x = Lib.current.width / 2;
+			winMessage.y = Lib.current.height / 2;
+			Lib.current.addChild(winMessage);
+			
+			angleDisplay.text = "";
+			powerDisplay.text = "";
+			
+			if (winner.color == 0x000000) {
+				winMessage.textColor = 0xFF0000;
+				winMessage.text = "FAIL! You all lose.\nGame over";
+			} else {
+				winMessage.textColor = winner.color;
+				winMessage.text = "Yay! You win!\nGame over";
+			}
 		}
 	}
 }
