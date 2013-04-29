@@ -131,6 +131,8 @@ class Tank {
 	 * @param	event Key event
 	 */
 	public function onKey(isDownEvent : Bool, event : KeyboardEvent) {
+		// Only the current tank actually responds to keyboards events
+		// TODO: Add a player variable to this
 		if (!world.isCurrent(this)) return;
 		
 		// Shift makes it faster, ctrl makes it slower
@@ -140,10 +142,11 @@ class Tank {
 		
 		// TODO: This is ugly. Make it better
 		
-		//  LEFT  37 <-   97 a   65 A
-		//    UP  38 ^   119 w   87 W  
-		// RIGHT  39 ->  100 d   68 D
-		//  DOWN  40 v   115 s   83 S
+		//        Arrow   Lower   Upper
+		//  LEFT   37 <-   97 a    65 A
+		//    UP   38 ^   119 w    87 W  
+		// RIGHT   39 ->  100 d    68 D
+		//  DOWN   40 v   115 s    83 S
 		
 		if (event.keyCode == 37 || event.keyCode == 97 || event.keyCode == 65) {
 			left_pressed = isDownEvent;
@@ -153,6 +156,13 @@ class Tank {
 			up_pressed = isDownEvent;
 		} else if (event.keyCode == 40 || event.keyCode == 115 || event.keyCode == 83) {
 			down_pressed = isDownEvent;
+		}
+		
+		// On a key down == space, fire the tank's gun
+		// NOTE: This doesn't use the main update loop
+		// NOTE: ' ' == 32
+		if (event.keyCode == 32) {
+			world.fire();
 		}
 	}
 }

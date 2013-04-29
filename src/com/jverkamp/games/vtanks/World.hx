@@ -187,13 +187,21 @@ class World {
 	}
 	
 	/**
+	 * The current tank fires it's gun.
+	 * 
+	 * TODO: This should also advance the round
+	 */
+	public function fire() {
+		projectiles.push(new Projectile(this, currentTank, currentTank.getTurrent(), currentTank.angle, currentTank.power));
+	}
+	
+	/**
 	 * Update the world. Mostly update things in it.
 	 * @param	msSinceLastFrame The time that has passed (in ms) since the last frame.
 	 */
 	public function update(msSinceLastFrame : Int) {
-		for (tank in tanks) {
-			tank.update(msSinceLastFrame);
-		}
+		for (tank in tanks) tank.update(msSinceLastFrame);
+		for (proj in projectiles) proj.update(msSinceLastFrame);
 	}
 	
 	/**
@@ -246,6 +254,14 @@ class World {
 				powerDisplay.textColor = tank.color;
 				powerDisplay.text = "Power: " + (Math.round(tank.power * 100) / 100);
 			}
+		}
+		
+		// Projectiles
+		for (proj in projectiles) {
+			g.lineStyle(1, 0xFFFFFF);
+			g.beginFill(proj.tank.color);
+			g.drawCircle(proj.location.x, height - proj.location.y, Projectile.PROJECTILE_WIDTH);
+			g.endFill();
 		}
 	}
 }
