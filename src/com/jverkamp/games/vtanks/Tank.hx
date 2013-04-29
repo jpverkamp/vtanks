@@ -161,7 +161,7 @@ class Tank {
 		// On a key down == space, fire the tank's gun
 		// NOTE: This doesn't use the main update loop
 		// NOTE: ' ' == 32
-		if (event.keyCode == 32) {
+		if (isDownEvent && event.keyCode == 32) {
 			world.fire();
 		}
 	}

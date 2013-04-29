@@ -1,5 +1,7 @@
 package com.jverkamp.games.vtanks;
 
+import browser.geom.Matrix;
+import nme.display.GradientType;
 import nme.display.Graphics;
 import nme.display.Sprite;
 import nme.geom.Point;
@@ -66,7 +68,7 @@ class World {
 	function generateMountains(numberOfPeaks : Int = 10) {
 		// Left endpoint
 		mountains = new Array<Point>();
-		mountains.push(new Point(0, 0));
+		mountains.push(new Point(0, Std.random(height)));
 		
 		// Ususual offset between mountains, can also vary by half this either way.
 		var offset = width / numberOfPeaks;
@@ -83,7 +85,7 @@ class World {
 		}
 		
 		// Right endpoint
-		mountains.push(new Point(width, 0));
+		mountains.push(new Point(width, Std.random(height)));
 	}
 	
 	/**
@@ -200,8 +202,29 @@ class World {
 	 * @param	msSinceLastFrame The time that has passed (in ms) since the last frame.
 	 */
 	public function update(msSinceLastFrame : Int) {
-		for (tank in tanks) tank.update(msSinceLastFrame);
-		for (proj in projectiles) proj.update(msSinceLastFrame);
+		// Update each tank
+		for (tank in tanks) {
+			tank.update(msSinceLastFrame);
+			
+			// TODO: Check for falling tanks
+		}
+		
+		// Update each current projectile
+		var toRemove = new Array<Projectile>();
+		for (proj in projectiles) {
+			proj.update(msSinceLastFrame);			
+			
+			// Check for out of bounds, remove projectiles off the screen
+			if (proj.location.x < 0 || proj.location.x >= width || proj.location.y < 0 || proj.location.y >= height) {
+				toRemove.push(proj);
+			}
+			
+			// Check for collisions
+			// TODO: this
+		}
+		for (proj in toRemove) {
+			projectiles.remove(proj);
+		}
 	}
 	
 	/**
@@ -215,11 +238,15 @@ class World {
 		g.clear();
 		
 		// Mountains
-		g.lineStyle(2, 0xFFFFFF);
-		g.moveTo(mountains[0].x, height - mountains[0].y);
-		for (i in 1...mountains.length) {
+		g.beginFill(0xFFFFFF);
+		//g.beginGradientFill(GradientType.LINEAR, [0x33ff33, 0xbbffbb], [1, 1], [0, 255]); // TOOD: Rotate this from left/right to down/up.
+		g.moveTo(0, height);
+		for (i in 0...mountains.length) {
 			g.lineTo(mountains[i].x, height - mountains[i].y);
 		}
+		g.lineTo(width, height);
+		g.lineTo(0, height);
+		g.endFill();
 		
 		// Tanks
 		//    D (tip)
