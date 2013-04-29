@@ -3,6 +3,8 @@ package com.jverkamp.games.vtanks;
 import nme.display.Graphics;
 import nme.display.Sprite;
 import nme.geom.Point;
+import nme.text.TextField;
+import nme.Lib;
 
 class World {
 	var width : Int;
@@ -11,6 +13,11 @@ class World {
 	var g : Graphics;
 	var mountains : Array<Point>;
 	var tanks : Array<Tank>;
+	
+	var currentTank : Tank;
+	
+	var angleDisplay : TextField;
+	var powerDisplay : TextField;
 
 	public function new(g : Graphics, width : Int, height : Int) {
 		this.g = g;
@@ -19,6 +26,18 @@ class World {
 		
 		generateMountains();
 		addTanks();
+		
+		angleDisplay = new TextField();
+		angleDisplay.width = 100;
+		angleDisplay.x = 12;
+		angleDisplay.y = 24;
+		Lib.current.addChild(angleDisplay);
+		
+		powerDisplay = new TextField();
+		powerDisplay.width = 100;
+		powerDisplay.x = 12;
+		powerDisplay.y = 36;
+		Lib.current.addChild(powerDisplay);
 		
 		draw();
 	}
@@ -76,13 +95,35 @@ class World {
 			mountains.insert(j + 1, new Point(x - Tank.TANK_WIDTH / 2, y));
 			mountains.insert(j + 2, new Point(x + Tank.TANK_WIDTH / 2, y));
 			
-			var r : Int = Std.random(8) * 16 + 128;
-			var g : Int = Std.random(8) * 16 + 128;
-			var b : Int = Std.random(8) * 16 + 128;
-			var rgb : Int = (r << 16) | (g << 8) | b;
-			
-			tanks.push(new Tank(new Point(x, y), rgb));
+			var rgb : Int = 0x000000;
+			while (true) {
+				var r : Int = Std.int(Math.min(255, Std.random(3) * 128));
+				var g : Int = Std.int(Math.min(255, Std.random(3) * 128));
+				var b : Int = Std.int(Math.min(255, Std.random(3) * 128));
+				rgb = (r << 16) | (g << 8) | b;
+				
+				// Have to be at least a bit bright
+				if (r + g + b < 255)
+					continue;
+
+				// Can't match a previous color
+				var matching = false;
+				for (tank in tanks)
+					if (tank.color == rgb)
+						matching = true;
+				if (matching)
+					continue;
+
+				break;
+			}
+			tanks.push(new Tank(this, new Point(x, y), rgb));
 		}
+		
+		currentTank = tanks[0];
+	}
+	
+	public function isCurrent(tank : Tank) : Bool {
+		return tank == currentTank;
 	}
 	
 	public function draw() {
@@ -117,6 +158,15 @@ class World {
 			/* E */ g.lineTo(tank.location.x + Tank.TANK_WIDTH / 4, height - tank.location.y - Tank.TANK_WIDTH / 2);
 			/* F */ g.lineTo(tank.location.x + Tank.TANK_WIDTH / 2, height - tank.location.y);
 			/* A */ g.lineTo(tank.location.x - Tank.TANK_WIDTH / 2, height - tank.location.y);
+			
+			// Draw current angle and power
+			if (isCurrent(tank)) {
+				angleDisplay.textColor = tank.color;
+				angleDisplay.text = "Angle: " + (-1 * (tank.angle - Math.PI / 2) * 2 * Math.PI / 360);
+				
+				powerDisplay.textColor = tank.color;
+				powerDisplay.text = "Power: " + tank.power;
+			}
 		}
 	}
 }

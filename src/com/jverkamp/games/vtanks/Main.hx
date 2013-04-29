@@ -25,7 +25,8 @@ class Main extends Sprite {
 	private function init(e)  {
 		fps = new TextField();
         fps.width = 400;
-        fps.y = 10;
+		fps.x = 12;
+        fps.y = 12;
 		fps.textColor = 0xFFFFFF;
         fps.text = "FPS: ";
         nme.Lib.current.addChild(fps);
