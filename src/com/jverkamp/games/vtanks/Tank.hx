@@ -4,22 +4,35 @@ import nme.geom.Point;
 import nme.events.Event;
 import nme.Lib;
 
+/**
+ * Tanks shoot things. Duh.
+ */
 class Tank {
+	// Woo constants!
+	// TODO: Is there a better way to do this in FlashDevelop? Like `final` or `readonly`?
 	public static var TANK_WIDTH = 16;
 	public static var ANGLE_DELTA = 2 * Math.PI / 360 * 5;
 	public static var POWER_DELTA = 1;
 	public static var POWER_MAX = 100;
+	
+	// Shift makes it faster, ctrl makes it slower
+	// Shift has priority
 	public static var SHIFT_MULTIPLIER = 3;
 	public static var CTRL_MULTIPLIER = 0.1;
 	
 	public var world : World;
-	
 	public var location : Point;
 	public var color : Int;
 	
+	// Angle in radians, 0 is right, positive is counterclockwise
 	public var angle : Float;
+	
+	// Power in random arbitrary units, 0 is minimum, 100 is maximum
 	public var power : Float;
 	
+	// Currently pressed keys we care about
+	// TODO: Abstract this somehow?
+	// TODO: Reset these when a tank gains control or we'll get weird artifacts
 	public var left_pressed = false;
 	public var right_pressed = false;
 	public var up_pressed = false;
@@ -27,17 +40,29 @@ class Tank {
 	public var shift_pressed = false;
 	public var ctrl_pressed = false;
 	
+	/**
+	 * Create a new tank.
+	 * @param	world The world the tank is in.
+	 * @param	location Where in the world to place the tank.
+	 * @param	color The color to draw the tank 0xrrggbb
+	 */
 	public function new(world : World, location : Point, color : Int) {
 		this.world = world;
 		this.location = location;
 		this.color = color;
-		this.angle = 0.5 * Math.PI;
+		this.angle = 0.5 * Math.PI; // up
 		this.power = 50;
 		
+		// We have to bind to the stage's key listener or we don't get global keys
 		Lib.current.stage.addEventListener(KeyboardEvent.KEY_UP, onKeyUp);
 		Lib.current.stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 	}
 	
+	/**
+	 * Get the current point at the end of the turret
+	 * Yay trig.
+	 * @return The end point
+	 */
 	public function getTurrent() : Point {
 		return new Point(
 			location.x + Math.cos(angle) * TANK_WIDTH / 2,
@@ -45,15 +70,26 @@ class Tank {
 		);
 	}
 	
-	public function update(ms : Int) {
+	/**
+	 * Update the current tank.
+	 * 
+	 * NOTE: Since we aren't actually using the time, tanks will move slower under slower FPS
+	 * TODO: /\ Fix this
+	 * 
+	 * @param	msSinceLastFrame How long it's been since the last update
+	 */
+	public function update(msSinceLastFrame : Int) {
 		// NOTE: for angles, 0 is right and positive is counter clockwise
 		
+		// Shift makes it faster, ctrl makes it slower
+		// Shift has priority
 		var mult : Float = 1.0;
 		if (shift_pressed)
 			mult = SHIFT_MULTIPLIER;
 		else if (ctrl_pressed)
 			mult = CTRL_MULTIPLIER;
 		
+		// Update variables, ignore bounds
 		if (left_pressed) {
 			angle += mult * ANGLE_DELTA;
 		} else if (right_pressed) {
@@ -64,31 +100,50 @@ class Tank {
 			power -= mult * POWER_DELTA;
 		}
 		
+		// Modular math on angle to 2Pi radians
 		while (angle < 0) angle += 2 * Math.PI;
 		while (angle >= Math.PI * 2) angle -= 2 * Math.PI;
 		
+		// Clamp power to [0, 100]
 		if (power < 0) power = 0;
 		if (power > POWER_MAX) power = POWER_MAX;
 	}
 	
+	/**
+	 * When a key goes down (In a theater? Listening to Alanis Morissette. Good timing.), register that. 
+	 * @param	event Key event.
+	 */
 	public function onKeyDown(event : KeyboardEvent) {
 		onKey(true, event);
 	}
 	
+	/**
+	 * When a key goes up, register that. 
+	 * @param	event Key event.
+	 */
 	public function onKeyUp(event : KeyboardEvent) {
 		onKey(false, event);
 	}
 	
+	/**
+	 * Merged keyboard events.
+	 * @param	isDownEvent If we want down or up
+	 * @param	event Key event
+	 */
 	public function onKey(isDownEvent : Bool, event : KeyboardEvent) {
 		if (!world.isCurrent(this)) return;
 		
-		//  LEFT: 37 <-   97 a   65 A
-		//    UP: 38 ^   119 w   87 W  
-		// RIGHT: 39 ->  100 d   68 D
-		//  DOWN: 40 v   115 s   83 S
-		
+		// Shift makes it faster, ctrl makes it slower
+		// Shift has priority
 		shift_pressed = isDownEvent && event.shiftKey;
 		ctrl_pressed = isDownEvent && event.ctrlKey;
+		
+		// TODO: This is ugly. Make it better
+		
+		//  LEFT  37 <-   97 a   65 A
+		//    UP  38 ^   119 w   87 W  
+		// RIGHT  39 ->  100 d   68 D
+		//  DOWN  40 v   115 s   83 S
 		
 		if (event.keyCode == 37 || event.keyCode == 97 || event.keyCode == 65) {
 			left_pressed = isDownEvent;
