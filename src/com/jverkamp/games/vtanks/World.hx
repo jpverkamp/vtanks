@@ -251,9 +251,43 @@ class World {
 			}
 			
 			// If it's too far gone, boom
-			else if (proj.explodingFrame > Projectile.MAX_EXPLOSION_SIZE) {
+			else if (proj.explodingFrame > Projectile.MAX_EXPLOSION_WIDTH) {
 				projsToRemove.push(proj);
 				
+				// Redraw the landscape
+				
+				// Remove any peaks in the collision range
+				var insertAt = -1;
+				var i = 0;
+				while (i < mountains.length) {
+					// This where it goes, remember it
+					if (insertAt < 0 && mountains[i].x > proj.location.x) {
+						insertAt = i;
+					}
+					
+					// Peak matched, remove
+					if (proj.location.x - Projectile.MAX_EXPLOSION_WIDTH < mountains[i].x && proj.location.x - Projectile.MAX_EXPLOSION_WIDTH > mountains[i].x) {
+						mountains.remove(mountains[i]);
+					} 
+					
+					// No peak, advance
+					else {
+						i++;
+					}
+				}
+				
+				// Add new peaks for the explosion
+				trace("DEBUG: new peak at " + insertAt + ", " + new Point(proj.location.x - Projectile.MAX_EXPLOSION_WIDTH, proj.location.y));
+				trace("DEBUG: new peak at " + (insertAt + 1) + ", " + new Point(proj.location.x - Projectile.MAX_EXPLOSION_WIDTH / 2, proj.location.y - Projectile.MAX_EXPLOSION_WIDTH / 2));
+				trace("DEBUG: new peak at " + (insertAt + 2) + ", " + new Point(proj.location.x + Projectile.MAX_EXPLOSION_WIDTH / 2, proj.location.y - Projectile.MAX_EXPLOSION_WIDTH / 2));
+				trace("DEBUG: new peak at " + (insertAt + 3) + ", " + new Point(proj.location.x + Projectile.MAX_EXPLOSION_WIDTH, proj.location.y));
+				
+				mountains.insert(insertAt, new Point(proj.location.x - Projectile.MAX_EXPLOSION_WIDTH, proj.location.y));
+				mountains.insert(insertAt + 1, new Point(proj.location.x - Projectile.MAX_EXPLOSION_WIDTH / 2, proj.location.y - Projectile.MAX_EXPLOSION_WIDTH / 2));
+				mountains.insert(insertAt + 2, new Point(proj.location.x + Projectile.MAX_EXPLOSION_WIDTH / 2, proj.location.y - Projectile.MAX_EXPLOSION_WIDTH / 2));
+				mountains.insert(insertAt + 3, new Point(proj.location.x + Projectile.MAX_EXPLOSION_WIDTH, proj.location.y));
+				
+				mountains.sort(function(a, b) { return (a.x > b.x ? 1 : a.x < b.x ? -1 : 0); } );
 			}
 			
 			// Check if we can remove any tanks

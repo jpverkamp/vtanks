@@ -8,7 +8,7 @@ class Projectile {
 	public static var PROJECTILE_WIDTH = 2.0;
 	public static var GRAVITY = 9.81;
 	public static var POWER_MULTIPLIER = 10.0;
-	public static var MAX_EXPLOSION_SIZE = 25;
+	public static var MAX_EXPLOSION_WIDTH = 25;
 	
 	public var world : World;
 	public var tank : Tank;

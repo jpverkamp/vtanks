@@ -20,9 +20,11 @@ class Tank {
 	public static var SHIFT_MULTIPLIER = 3;
 	public static var CTRL_MULTIPLIER = 0.1;
 	
+	// Actual tank parameters
 	public var world : World;
 	public var location : Point;
 	public var color : Int;
+	public var falling : Bool;
 	
 	// Angle in radians, 0 is right, positive is counterclockwise
 	public var angle : Float;
