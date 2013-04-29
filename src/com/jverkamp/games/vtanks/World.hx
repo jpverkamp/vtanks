@@ -19,8 +19,7 @@ class World {
 	var angleDisplay : TextField;
 	var powerDisplay : TextField;
 
-	public function new(g : Graphics, width : Int, height : Int) {
-		this.g = g;
+	public function new(width : Int, height : Int) {
 		this.width = width;
 		this.height = height;
 		
@@ -38,8 +37,6 @@ class World {
 		powerDisplay.x = 12;
 		powerDisplay.y = 36;
 		Lib.current.addChild(powerDisplay);
-		
-		draw();
 	}
 	
 	function generateMountains(numberOfPeaks : Int = 10) {
@@ -79,7 +76,7 @@ class World {
 				}
 			}
 			
-			if (y < 0) {
+			if (y < Tank.TANK_WIDTH || y > height - Tank.TANK_WIDTH) {
 				//trace("DEBUG: couldn't place a tank at " + x + "--trying again");
 				continue;
 			} else {
@@ -126,7 +123,13 @@ class World {
 		return tank == currentTank;
 	}
 	
-	public function draw() {
+	public function update(ms : Int) {
+		for (tank in tanks) {
+			tank.update(ms);
+		}
+	}
+	
+	public function draw(g : Graphics) {
 		g.clear();
 		
 		// Mountains
@@ -159,13 +162,16 @@ class World {
 			/* F */ g.lineTo(tank.location.x + Tank.TANK_WIDTH / 2, height - tank.location.y);
 			/* A */ g.lineTo(tank.location.x - Tank.TANK_WIDTH / 2, height - tank.location.y);
 			
-			// Draw current angle and power
+			// Update current angle and power
 			if (isCurrent(tank)) {
+				var angleInDegrees = (tank.angle - Math.PI / 2) * 360 / (2 * Math.PI);
+				if (angleInDegrees > 180) angleInDegrees -= 360;
+				
 				angleDisplay.textColor = tank.color;
-				angleDisplay.text = "Angle: " + (-1 * (tank.angle - Math.PI / 2) * 2 * Math.PI / 360);
+				angleDisplay.text = "Angle: " + (Math.round(-1 * angleInDegrees * 100) / 100);
 				
 				powerDisplay.textColor = tank.color;
-				powerDisplay.text = "Power: " + tank.power;
+				powerDisplay.text = "Power: " + (Math.round(tank.power * 100) / 100);
 			}
 		}
 	}

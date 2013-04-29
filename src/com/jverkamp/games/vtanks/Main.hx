@@ -9,6 +9,7 @@ import nme.Lib;
 class Main extends Sprite {
 	var world : World;
 	
+	var lastTime : Int;
 	var startTime : Int;
 	var frames : Int;
 	var fps : TextField;
@@ -32,8 +33,9 @@ class Main extends Sprite {
         nme.Lib.current.addChild(fps);
 		
 		startTime = nme.Lib.getTimer();
+		lastTime = startTime;
 		
-		world = new World(Lib.current.graphics, 640, 480);
+		world = new World(640, 480);
 	
 		var timer = new haxe.Timer(10);
         timer.run = runLoop;
@@ -41,9 +43,14 @@ class Main extends Sprite {
 	
 	private function runLoop() {
 		frames += 1;
-		fps.text = "FPS: " + (frames / (0.001 * (Lib.getTimer() - startTime)));
+		fps.text = "FPS: " + (Math.round(100 * (frames / (0.001 * (Lib.getTimer() - startTime)))) / 100);
 		
-		world.draw();
+		var time = nme.Lib.getTimer();
+		
+		world.update(time - lastTime);
+		world.draw(Lib.current.graphics);
+		
+		lastTime = time;
 	}
 	
 	static public function main() {
