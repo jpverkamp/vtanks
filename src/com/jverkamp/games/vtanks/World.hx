@@ -97,12 +97,26 @@ class World {
 		
 		// Tanks
 		for (tank in tanks) {
+			var tip = tank.getTurrent();
+			
 			g.lineStyle(2, tank.color);
-			g.moveTo(tank.location.x - Tank.TANK_WIDTH / 2, height - tank.location.y);
-			g.lineTo(tank.location.x - Tank.TANK_WIDTH / 2 + Tank.TANK_WIDTH / 4, height - tank.location.y - Tank.TANK_WIDTH / 2);
-			g.lineTo(tank.location.x + Tank.TANK_WIDTH / 4, height - tank.location.y - Tank.TANK_WIDTH / 2);
-			g.lineTo(tank.location.x + Tank.TANK_WIDTH / 2, height - tank.location.y);
-			g.lineTo(tank.location.x - Tank.TANK_WIDTH / 2, height - tank.location.y);
+			
+			/*
+			 *    D (tip)
+			 *     \
+			 *   B--C--E
+			 *  / tank  \
+			 * A---------F 
+			 */
+			
+			/* A */ g.moveTo(tank.location.x - Tank.TANK_WIDTH / 2, height - tank.location.y);
+			/* B */ g.lineTo(tank.location.x - Tank.TANK_WIDTH / 2 + Tank.TANK_WIDTH / 4, height - tank.location.y - Tank.TANK_WIDTH / 2);
+			/* C */ g.lineTo(tank.location.x, height - tank.location.y - Tank.TANK_WIDTH / 2);
+			/* D */ g.lineTo(tip.x, height - tip.y);
+			/* C */ g.lineTo(tank.location.x, height - tank.location.y - Tank.TANK_WIDTH / 2);
+			/* E */ g.lineTo(tank.location.x + Tank.TANK_WIDTH / 4, height - tank.location.y - Tank.TANK_WIDTH / 2);
+			/* F */ g.lineTo(tank.location.x + Tank.TANK_WIDTH / 2, height - tank.location.y);
+			/* A */ g.lineTo(tank.location.x - Tank.TANK_WIDTH / 2, height - tank.location.y);
 		}
 	}
 }
