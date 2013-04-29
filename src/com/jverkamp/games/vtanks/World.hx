@@ -210,21 +210,72 @@ class World {
 		}
 		
 		// Update each current projectile
-		var toRemove = new Array<Projectile>();
+		var projsToRemove = new Array<Projectile>();
+		var tanksToRemove = new Array<Tank>();
+		
 		for (proj in projectiles) {
 			proj.update(msSinceLastFrame);			
 			
 			// Check for out of bounds, remove projectiles off the screen
 			if (proj.location.x < 0 || proj.location.x >= width || proj.location.y < 0 || proj.location.y >= height) {
-				toRemove.push(proj);
+				projsToRemove.push(proj);
 			}
 			
 			// Check for collisions
-			// TODO: this
+			if (proj.explodingFrame < 0) {
+				var impactY : Float = -1;
+				for (j in 0...mountains.length - 1) {
+					// We have to be between two peaks
+					// Get the heights of those and interpolate between them
+					if (mountains[j].x <= proj.location.x && mountains[j + 1].x >= proj.location.x) {
+						trace("projectile at " + proj.location + " hitting between " + mountains[j] + " and " + mountains[j + 1]);
+						
+						var multiplier = 1.0 * (proj.location.x - mountains[j].x) / (mountains[j + 1].x - mountains[j].x);
+						var yground = multiplier * (mountains[j + 1].y - mountains[j].y) + mountains[j].y;
+						
+						trace("ground point is at " + yground);
+						
+						if (proj.location.y < yground) {
+							impactY = yground;
+							break;
+						}
+					}
+				}
+				
+				// We hit something!
+				if (impactY >= 0) {
+					proj.explodingFrame = 1;
+					proj.velocity = new Point(0, 0);
+					proj.location.y = impactY;
+				}
+			}
+			
+			// If it's too far gone, boom
+			else if (proj.explodingFrame > Projectile.MAX_EXPLOSION_SIZE) {
+				projsToRemove.push(proj);
+				
+			}
+			
+			// Check if we can remove any tanks
+			else {
+				var offset : Point;
+				var distance : Float;
+				
+				for (tank in tanks) {
+					offset = tank.location.subtract(proj.location);
+					distance = Math.sqrt(offset.x * offset.x + offset.y * offset.y);
+					
+					if (distance - Tank.TANK_WIDTH < proj.explodingFrame) {
+						tanksToRemove.push(tank);
+					}
+				}
+			}
+			
 		}
-		for (proj in toRemove) {
-			projectiles.remove(proj);
-		}
+		
+		// Remove time
+		for (proj in projsToRemove) projectiles.remove(proj);
+		for (tank in tanksToRemove) tanks.remove(tank);
 	}
 	
 	/**
@@ -285,9 +336,14 @@ class World {
 		
 		// Projectiles
 		for (proj in projectiles) {
-			g.lineStyle(1, 0xFFFFFF);
-			g.beginFill(proj.tank.color);
-			g.drawCircle(proj.location.x, height - proj.location.y, Projectile.PROJECTILE_WIDTH);
+			//g.lineStyle(1, 0xFFFFFF);
+			//g.beginFill(proj.tank.color);
+			g.beginGradientFill(GradientType.RADIAL, [0xFFFFFF, proj.tank.color], [1, 1], [0, 255]);
+			if (proj.explodingFrame < 0) {
+				g.drawCircle(proj.location.x, height - proj.location.y, Projectile.PROJECTILE_WIDTH);
+			} else {
+				g.drawCircle(proj.location.x, height - proj.location.y, Projectile.PROJECTILE_WIDTH + proj.explodingFrame);
+			}
 			g.endFill();
 		}
 	}
